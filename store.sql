@@ -1,3 +1,6 @@
+create database store;
+
+USE store;
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -11,7 +14,7 @@ CREATE TABLE users (
     `null_1` VARCHAR(255) NULL,
     `null_2` INT NULL,
     `null_3` TEXT NULL
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE stores (
     id INT AUTO_INCREMENT PRIMARY KEY,
