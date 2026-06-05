@@ -10,10 +10,10 @@ const router = express.Router()
 
 router.post('/register', (req, res) => {
     const {name, email, password, address, phone} = req.body
-    const sql = 'INSERT INTO users (name, email, password, address, phone) VALUES (?, ?, ?, ?, ?)'
+    const sql = 'INSERT INTO users (name, email, password, address, phone, role) VALUES (?, ?, ?, ?, ?, ?)'
     bcrypt.hash(password, config.SALT_ROUND, (err, hashedPassword) => {
         if (hashedPassword) {
-            pool.query(sql, [name, email, hashedPassword, address, phone], (err, data) => {
+            pool.query(sql, [name, email, hashedPassword, address, phone, 'User'], (err, data) => {
                 res.send(result.createResult(err, data))
             })
         } else
@@ -41,7 +41,8 @@ router.post('/login', (req, res) => {
                         name: data[0].name,
                         email: data[0].email,
                         address: data[0].address,
-                        phone: data[0].phone
+                        phone: data[0].phone,
+                        role: data[0].role
                     }
                     res.send(result.createResult(null, user))
                 }
