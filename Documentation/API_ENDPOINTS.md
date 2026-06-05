@@ -4,10 +4,12 @@
 1. [Authentication Endpoints](#authentication-endpoints)
 2. [Admin Endpoints](#admin-endpoints)
 3. [User Endpoints](#user-endpoints)
-4. [Store Owner Endpoints](#store-owner-endpoints)
-5. [Common Response Formats](#common-response-formats)
-6. [Error Handling](#error-handling)
-7. [Status Codes](#status-codes)
+4. [Store Endpoints](#store-endpoints)
+5. [Rating Endpoints](#rating-endpoints)
+6. [Store Owner Endpoints](#store-owner-endpoints)
+7. [Common Response Formats](#common-response-formats)
+8. [Error Handling](#error-handling)
+9. [Status Codes](#status-codes)
 
 ---
 
@@ -317,7 +319,139 @@ Response sample:
 
 ---
 
-## Store Endpoints (actual routes)
+## Rating Endpoints (actual routes)
+
+All rating routes are mounted under `/api/ratings`.
+
+### 1. Submit a new rating
+**POST** `/api/ratings/add`
+
+Request body:
+```json
+{
+  "user_id": 5,
+  "store_id": 1,
+  "rating_value": 4,
+  "review_text": "Great service!"
+}
+```
+
+Response (on success):
+```json
+{
+  "success": true,
+  "data": { "affectedRows": 1 }
+}
+```
+
+**Note:** Will return an error if the user has already rated this store.
+
+### 2. Update/Modify a rating
+**PUT** `/api/ratings/update/:rating_id`
+
+Request body:
+```json
+{
+  "rating_value": 5,
+  "review_text": "Updated review - excellent!"
+}
+```
+
+### 3. Get ratings submitted by a specific user
+**GET** `/api/ratings/user/:user_id`
+
+Response sample:
+```json
+[
+  {
+    "rating_id": 1,
+    "rating_value": 4,
+    "review_text": "Great service!",
+    "created_at": "2024-01-15T10:30:00Z",
+    "store_id": 1,
+    "store_name": "Coffee Shop",
+    "store_address": "123 Main St"
+  }
+]
+```
+
+### 4. Get ratings for a specific store
+**GET** `/api/ratings/store/:store_id`
+
+Response sample:
+```json
+[
+  {
+    "rating_id": 1,
+    "rating_value": 4,
+    "review_text": "Great service!",
+    "created_at": "2024-01-15T10:30:00Z",
+    "uid": 5,
+    "name": "John Doe",
+    "email": "john@example.com"
+  }
+]
+```
+
+### 5. Get average rating for a store
+**GET** `/api/ratings/store/:store_id/average`
+
+Response sample:
+```json
+[
+  {
+    "store_id": 1,
+    "store_name": "Coffee Shop",
+    "average_rating": 4.5,
+    "total_ratings": 20
+  }
+]
+```
+
+### 6. Get all ratings with optional filters
+**GET** `/api/ratings/list`
+
+Query parameters (all optional):
+- `store_id`: Filter by store ID
+- `user_id`: Filter by user ID
+- `min_rating`: Filter ratings >= min_rating (1-5)
+- `max_rating`: Filter ratings <= max_rating (1-5)
+
+**Examples:**
+- `/api/ratings/list` — Get all ratings
+- `/api/ratings/list?store_id=1` — Get all ratings for store 1
+- `/api/ratings/list?user_id=5` — Get all ratings by user 5
+- `/api/ratings/list?min_rating=4&max_rating=5` — Get ratings between 4 and 5
+
+Response sample:
+```json
+[
+  {
+    "rating_id": 1,
+    "rating_value": 4,
+    "review_text": "Great service!",
+    "created_at": "2024-01-15T10:30:00Z",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "store_name": "Coffee Shop",
+    "store_address": "123 Main St"
+  }
+]
+```
+
+### 7. Delete a rating
+**DELETE** `/api/ratings/delete/:rating_id`
+
+Response (on success):
+```json
+{
+  "success": true,
+  "data": { "affectedRows": 1 }
+}
+```
+
+---
+
 
 All store routes are mounted under `/api/stores`.
 
@@ -501,7 +635,7 @@ Request Body:
 - All protected endpoints require `Authorization: Bearer {token}` header
 - Token should be included in every request to protected routes
 - Token expires after 24 hours (configurable)
-- Use `/api/auth/refresh` to get a new token
+- The current backend does not implement a dedicated refresh-token endpoint
 
 ### Role-Based Access Control (RBAC)
 - **ADMIN**: Full access to admin endpoints

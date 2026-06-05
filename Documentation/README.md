@@ -15,10 +15,10 @@
 Complete REST API specification with all endpoints organized by functionality.
 
 **Contains:**
-- Authentication endpoints (login, register, logout, refresh)
-- Admin endpoints (dashboard, user management, store management)
+- Authentication endpoints (login, register)
+- Admin endpoints (user management, store management)
 - User endpoints (store browsing, ratings, profile)
-- Store owner endpoints (dashboard, ratings view)
+- Store owner endpoints (ratings view)
 - Error handling and response formats
 - Status codes and authentication flow
 - Pagination, sorting, and filtering specifications
@@ -87,8 +87,8 @@ Comprehensive authentication and authorization implementation guide.
 
 **Contains:**
 - JWT token structure and generation
-- Access token and refresh token implementation
-- Token verification and refresh flow
+- JWT access token implementation
+- Token verification flow
 - User roles and permission matrix
 - Password security requirements and validation
 - Password hashing with bcrypt
@@ -100,7 +100,7 @@ Comprehensive authentication and authorization implementation guide.
 - Complete code examples
 
 **Key Concepts:**
-- **JWT Tokens**: 24-hour expiry for access, 7-day for refresh
+- **JWT Tokens**: 24-hour expiry for access; refresh-token support is optional and not currently implemented
 - **Roles**: ADMIN, STORE_OWNER, NORMAL_USER
 - **Password**: 8-16 chars, 1 uppercase, 1 special character
 - **Middleware**: Token verification, role checking, resource ownership
@@ -165,8 +165,8 @@ Comprehensive authentication and authorization implementation guide.
 ### 2. **JWT Token Authentication**
 - Stateless authentication (no server-side session storage)
 - Access tokens for short-term access (24 hours)
-- Refresh tokens for long-term validity (7 days)
-- Secure HttpOnly cookies for refresh tokens
+- Refresh-token support is described as an extension and is not implemented in the current backend
+- Secure HttpOnly cookies can be used for future refresh-token support
 
 ### 3. **Database Design**
 - UUID primary keys for scalability
@@ -260,17 +260,15 @@ mysql -u root -p store_management < database_schema.sql
 ```
 1. User submits form (name, email, address, password)
 2. Frontend validates input
-3. Frontend sends POST /api/auth/register
+3. Frontend sends POST /api/users/register
 4. Backend validates password strength
 5. Backend checks email uniqueness
 6. Backend hashes password with bcrypt
 7. Backend creates user in database
 8. Backend generates JWT access token
-9. Backend generates refresh token
-10. Backend returns token + user data
-11. Frontend stores access token in memory
-12. Frontend stores refresh token in secure cookie
-13. Frontend redirects to appropriate dashboard
+9. Backend returns token + user data
+10. Frontend stores access token in memory
+11. Frontend redirects to appropriate dashboard
 ```
 
 ### Rating Submission Flow
@@ -292,13 +290,13 @@ mysql -u root -p store_management < database_schema.sql
 ```
 1. Admin logs in with credentials
 2. System verifies admin role
-3. Frontend sends GET /api/admin/dashboard
+3. Frontend calls admin endpoints:
+   - GET /api/admins/users/count
+   - GET /api/admins/stores/count
+   - GET /api/admins/ratings/count
 4. Backend extracts user from JWT
 5. Backend checks user role = ADMIN
-6. Backend calculates statistics:
-   - COUNT(users) WHERE is_active = TRUE
-   - COUNT(stores) WHERE is_active = TRUE
-   - COUNT(ratings)
+6. Backend calculates statistics using admin route queries
 7. Backend returns statistics
 8. Frontend renders dashboard charts
 9. Frontend provides links to manage users/stores
@@ -314,7 +312,6 @@ mysql -u root -p store_management < database_schema.sql
 
 ### Layer 2: Authentication
 - JWT tokens with expiration
-- Refresh token rotation
 - Secure cookie storage (HttpOnly, Secure, SameSite)
 
 ### Layer 3: Authorization
@@ -460,7 +457,7 @@ A: No, each user has a single role (ADMIN, STORE_OWNER, or NORMAL_USER).
 A: No, Store Owner and Normal User are separate roles.
 
 **Q: How long do tokens last?**  
-A: Access tokens last 24 hours, refresh tokens last 7 days.
+A: Access tokens last 24 hours. Refresh-token support is not currently implemented in the backend.
 
 **Q: What happens when a store is deleted?**  
 A: All associated ratings are cascade-deleted per database design.

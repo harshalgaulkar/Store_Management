@@ -84,6 +84,8 @@ const generateRefreshToken = (user) => {
 };
 ```
 
+_Note: the current backend does not expose a dedicated refresh-token route. This is an optional extension pattern._
+
 ### Token Verification
 
 ```javascript
@@ -112,59 +114,8 @@ const verifyRefreshToken = (token) => {
 
 ### Token Refresh Flow
 
-```
-POST /api/auth/refresh
-Header: Authorization: Bearer {refresh_token}
-
-Response:
-{
-  "success": true,
-  "token": "new_access_token_here",
-  "refreshToken": "new_refresh_token_here (optional)"
-}
-```
-
-**Backend Implementation:**
-
-```javascript
-const refreshToken = async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Refresh token required'
-      });
-    }
-
-    // Verify refresh token
-    const decoded = verifyRefreshToken(token);
-    
-    // Get user from database
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    // Generate new access token
-    const newAccessToken = generateAccessToken(user);
-
-    res.json({
-      success: true,
-      token: newAccessToken
-    });
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid refresh token'
-    });
-  }
-};
-```
+Current backend implementation does not include a dedicated refresh-token endpoint.
+Access tokens are issued at login, and a refresh flow may be added later if the backend is extended.
 
 ---
 
@@ -198,14 +149,21 @@ NORMAL_USER
 
 | Endpoint | ADMIN | STORE_OWNER | NORMAL_USER |
 |----------|:-----:|:----------:|:----------:|
-| POST /api/auth/register | ✗ | ✗ | ✓ |
-| POST /api/auth/login | ✓ | ✓ | ✓ |
-| POST /api/admin/users | ✓ | ✗ | ✗ |
-| GET /api/admin/users | ✓ | ✗ | ✗ |
-| GET /api/users/stores | ✗ | ✓ | ✓ |
-| POST /api/users/ratings | ✗ | ✓ | ✓ |
-| GET /api/store-owner/dashboard | ✗ | ✓ | ✗ |
-| GET /api/admin/dashboard | ✓ | ✗ | ✗ |
+| POST /api/users/register | ✗ | ✗ | ✓ |
+| POST /api/users/login | ✗ | ✗ | ✓ |
+| POST /api/store-owners/register | ✗ | ✓ | ✗ |
+| POST /api/store-owners/login | ✗ | ✓ | ✗ |
+| POST /api/admins/register | ✓ | ✗ | ✗ |
+| POST /api/admins/login | ✓ | ✗ | ✗ |
+| GET /api/admins/users/count | ✓ | ✗ | ✗ |
+| GET /api/admins/stores/count | ✓ | ✗ | ✗ |
+| GET /api/admins/ratings/count | ✓ | ✗ | ✗ |
+| GET /api/store-owners/ratings?uid={owner_uid} | ✗ | ✓ | ✗ |
+| GET /api/store-owners/ratings/average?uid={owner_uid} | ✗ | ✓ | ✗ |
+| PUT /api/store-owners/update-password | ✗ | ✓ | ✗ |
+| GET /api/users/ratings?uid={owner_uid} | ✗ | ✓ | ✗ |
+| GET /api/stores/all | ✗ | ✓ | ✓ |
+| GET /api/stores/search?query={text} | ✗ | ✓ | ✓ |
 
 ---
 
@@ -615,24 +573,31 @@ const authorize = (...allowedRoles) => {
 
 // Usage
 app.get(
-  '/api/admin/dashboard',
+  '/api/admins/users/count',
   authenticateToken,
   authorize('ADMIN'),
-  adminController.getDashboard
+  adminController.getUsersCount
 );
 
 app.get(
-  '/api/store-owner/dashboard',
+  '/api/admins/stores/count',
+  authenticateToken,
+  authorize('ADMIN'),
+  adminController.getStoresCount
+);
+
+app.get(
+  '/api/store-owners/ratings',
   authenticateToken,
   authorize('STORE_OWNER'),
-  storeOwnerController.getDashboard
+  storeOwnerController.getRatings
 );
 
 app.get(
-  '/api/users/stores',
+  '/api/stores/all',
   authenticateToken,
   authorize('NORMAL_USER', 'STORE_OWNER'),
-  userController.getStores
+  storeController.getAllStores
 );
 ```
 
@@ -691,7 +656,7 @@ app.put(
 ```javascript
 // ✓ GOOD: Store access token in memory, refresh token in secure cookie
 const handleLogin = async (credentials) => {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetch('/api/users/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
     credentials: 'include' // Include cookies
@@ -751,7 +716,7 @@ const loginLimiter = rateLimit({
   message: 'Too many login attempts, please try again later'
 });
 
-app.post('/api/auth/login', loginLimiter, login);
+app.post('/api/users/login', loginLimiter, login);
 ```
 
 ### 5. Input Validation
@@ -764,7 +729,7 @@ const validateLogin = [
   body('password').notEmpty().trim()
 ];
 
-app.post('/api/auth/login', validateLogin, (req, res, next) => {
+app.post('/api/users/login', validateLogin, (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
