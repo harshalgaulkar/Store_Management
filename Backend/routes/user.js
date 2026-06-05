@@ -13,7 +13,7 @@ router.post('/register', (req, res) => {
     const sql = 'INSERT INTO users (name, email, password, address, phone, role) VALUES (?, ?, ?, ?, ?, ?)'
     bcrypt.hash(password, config.SALT_ROUND, (err, hashedPassword) => {
         if (hashedPassword) {
-            pool.query(sql, [name, email, hashedPassword, address, phone, 'User'], (err, data) => {
+            pool.query(sql, [name, email, hashedPassword, address, phone, 'Normal'], (err, data) => {
                 res.send(result.createResult(err, data))
             })
         } else
