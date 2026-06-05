@@ -24,4 +24,46 @@ router.get('/all', (req, res) => {
         res.send(result.createResult(err, data))
     })
 })
+
+// Get store by ID
+router.get('/:id', (req, res) => {
+    const { id } = req.params
+    const sql = 'SELECT * FROM stores WHERE store_id = ?'
+    pool.query(sql, [id], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// Update store details
+router.put('/update/:id', (req, res) => {
+    const { id } = req.params
+    const { store_name, store_email, store_address } = req.body
+    const sql = 'UPDATE stores SET store_name = ?, store_email = ?, store_address = ? WHERE store_id = ?'
+    pool.query(sql, [store_name, store_email, store_address, id], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// Delete a store
+router.delete('/delete/:id', (req, res) => {
+    const { id } = req.params
+    const sql = 'DELETE FROM stores WHERE store_id = ?'
+    pool.query(sql, [id], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// Get count of store ratings
+router.get('/ratings/count', (req, res) => {
+    const sql = `SELECT r.store_id,s.store_name,COUNT(*) AS rating_count,
+        ROUND(AVG(r.rating_value), 2) AS avg_rating
+        FROM ratings r
+        JOIN stores s ON r.store_id = s.id
+        GROUP BY r.store_id, s.store_name
+        ORDER BY s.store_name;`;
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
 module.exports = router
