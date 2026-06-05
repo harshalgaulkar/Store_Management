@@ -88,9 +88,9 @@ router.get('/users/ratings/count', (req, res) => {
     })
 })
 
-// Get All Users
+// Get All Users normal and admins
 router.get('/users/all', (req, res) => {
-    const sql = `SELECT uid, name, email, address, phone FROM users WHERE role = "Normal"`
+    const sql = `SELECT uid, name, email, address, phone FROM users WHERE role != 'Normal'AND role != 'Admin'`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })
