@@ -23,7 +23,7 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const { email, password } = req.body
-    const sql = `SELECT * FROM users WHERE email = ?`
+    const sql = `SELECT * FROM users WHERE email = ? AND role != 'User'`
     pool.query(sql, [email], (err, data) => {
         if (err)
             res.send(result.createResult(err))
