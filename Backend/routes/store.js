@@ -76,4 +76,16 @@ router.get('/ratings/list', (req, res) => {
     })
 })
 
+
+//Search by name and address
+router.get('/search', (req, res) => {
+    const { query } = req.query
+    const sql = `SELECT * FROM stores WHERE store_name LIKE ? OR store_address LIKE ?`
+    const searchQuery = `%${query}%`
+    pool.query(sql, [searchQuery, searchQuery], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+
 module.exports = router
