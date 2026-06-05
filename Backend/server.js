@@ -14,11 +14,11 @@ const storeRoutes = require('./routes/store')
 const ratingsRoutes = require('./routes/ratings')
 
 // Using routes
-app.use('/api/users', userRoutes)
-app.use('/api/store-owners', storeOwnerRoutes)
-app.use('/api/admins', adminRoutes)
-app.use('/api/stores', storeRoutes)
-app.use('/api/ratings', ratingsRoutes)
+app.use('/users', userRoutes)
+app.use('/store-owners', storeOwnerRoutes)
+app.use('/admins', adminRoutes)
+app.use('/stores', storeRoutes)
+app.use('/ratings', ratingsRoutes)
 
 
 app.listen(4000, 'localhost',() => {
