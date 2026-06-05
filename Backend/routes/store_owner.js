@@ -67,6 +67,17 @@ router.get('/ratings', (req, res) => {
     })
 })
 
-
+// Store owner should see average rating of their store
+router.get('/ratings/average', (req, res) => {
+    const { uid } = req.query
+    const sql = `SELECT s.store_id, s.store_name, ROUND(AVG(r.rating_value), 2) AS avg_rating
+                FROM stores s
+                JOIN ratings r ON s.store_id = r.store_id
+                WHERE s.owner_id = ?
+                GROUP BY s.store_id, s.store_name`
+    pool.query(sql, [uid], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
 
 module.exports = router 
