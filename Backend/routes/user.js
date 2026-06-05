@@ -21,5 +21,35 @@ router.post('/register', (req, res) => {
     })
 })
 
+router.post('/login', (req, res) => {
+    const { email, password } = req.body
+    const sql = `SELECT * FROM users WHERE email = ?`
+    pool.query(sql, [email], (err, data) => {
+        if (err)
+            res.send(result.createResult(err))
+        else if (data.length == 0)
+            res.send(result.createResult("Invalid Email"))
+        else {
+            bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
+                if (passwordStatus) {
+                    const payload = {
+                        uid: data[0].uid,
+                    }
+                    const token = jwt.sign(payload, config.SECRET)
+                    const user = {
+                        token,
+                        name: data[0].name,
+                        email: data[0].email,
+                        address: data[0].address,
+                        phone: data[0].phone
+                    }
+                    res.send(result.createResult(null, user))
+                }
+                else
+                    res.send(result.createResult('Invalid Password'))
+            })
+        }
+    })
+})
 
 module.exports = router
