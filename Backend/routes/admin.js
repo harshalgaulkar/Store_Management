@@ -88,4 +88,21 @@ router.get('/users/ratings/count', (req, res) => {
     })
 })
 
+// Get All Users
+router.get('/users/all', (req, res) => {
+    const sql = `SELECT uid, name, email, address, phone FROM users WHERE role = "Normal"`
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// Get All Stores
+router.get('/stores/all', (req, res) => {
+    const sql = `SELECT store_id, store_name, store_email, store_address FROM stores`
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+
 module.exports = router
