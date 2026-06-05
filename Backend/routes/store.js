@@ -66,4 +66,14 @@ router.get('/ratings/count', (req, res) => {
     })
 })
 
+//List of store ratings
+router.get('/ratings/list', (req, res) => {
+    const sql = `SELECT s.store_id, s.store_name, r.rating_value, r.review_text, r.created_at
+                FROM stores s
+                JOIN ratings r ON s.store_id = r.store_id`
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
 module.exports = router
