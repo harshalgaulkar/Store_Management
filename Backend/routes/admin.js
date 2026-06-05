@@ -80,5 +80,12 @@ router.get('/ratings/count', (req, res) => {
     })
 })
 
+// Count of users who given ratings
+router.get('/users/ratings/count', (req, res) => {
+    const sql = `SELECT COUNT(DISTINCT user_id) AS userRatingCount FROM ratings`
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data[0]))
+    })
+})
 
 module.exports = router
