@@ -53,4 +53,17 @@ router.post('/login', (req, res) => {
     })
 })
 
+// See all ratings
+router.get('/ratings', (req, res) => {
+    const { uid } = req.query
+    const sql = `SELECT r.rating_id, r.rating_value, r.review, s.store_name
+        FROM ratings r
+        JOIN stores s ON r.store_id = s.id
+        JOIN users u ON s.owner_id = u.uid
+        WHERE u.uid = ?`
+    pool.query(sql, [uid], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
 module.exports = router
