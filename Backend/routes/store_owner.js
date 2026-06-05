@@ -55,5 +55,18 @@ router.post('/login', (req, res) => {
     })
 })
 
+// Store owner should see their store ratings and reviews
+router.get('/ratings', (req, res) => {
+    const { uid } = req.query
+    const sql = `SELECT s.store_id, s.store_name, r.rating_value, r.review_text, r.created_at
+                FROM stores s
+                JOIN ratings r ON s.store_id = r.store_id
+                WHERE s.owner_id = ?`
+    pool.query(sql, [uid], (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+
 
 module.exports = router 
