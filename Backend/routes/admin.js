@@ -57,12 +57,19 @@ router.post('/login', (req, res) => {
 
 
 // Count of users
-router.get('/count', (req, res) => {
+router.get('/users/count', (req, res) => {
     const sql = `SELECT COUNT(*) AS userCount FROM users WHERE role = "Normal"`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data[0]))
     })
 })
 
+// Count of stores
+router.get('/stores/count', (req, res) => {
+    const sql = `SELECT COUNT(*) AS storeCount FROM stores`
+    pool.query(sql, (err, data) => {
+        res.send(result.createResult(err, data[0]))
+    })
+})
 
 module.exports = router
