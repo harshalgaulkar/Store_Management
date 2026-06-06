@@ -1,10 +1,14 @@
 const mysql2 = require('mysql2')
 
 const pool = mysql2.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'manager',
-    database: 'store'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'manager',
+    database: process.env.DB_NAME || 'store',
+    port: process.env.DB_PORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 })
 
 module.exports = pool

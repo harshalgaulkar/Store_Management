@@ -21,6 +21,7 @@ app.use('/stores', storeRoutes)
 app.use('/ratings', ratingsRoutes)
 
 
-app.listen(4000, 'localhost',() => {
-    console.log('Server started at port 4000')
+const port = process.env.PORT || 4000
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server started at port ${port}`)
 })
