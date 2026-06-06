@@ -1,709 +1,549 @@
 # Store Management System - API Endpoints Documentation
 
-## Table of Contents
-1. [Authentication Endpoints](#authentication-endpoints)
-2. [Admin Endpoints](#admin-endpoints)
-3. [User Endpoints](#user-endpoints)
-4. [Store Endpoints](#store-endpoints)
-5. [Rating Endpoints](#rating-endpoints)
-6. [Store Owner Endpoints](#store-owner-endpoints)
-7. [Common Response Formats](#common-response-formats)
-8. [Error Handling](#error-handling)
-9. [Status Codes](#status-codes)
+All routes in the backend are mounted directly on the root of the server (`http://localhost:4000`) and grouped by resource routers.
 
 ---
 
-## Authentication Endpoints (actual routes)
+## 📋 Standard Response Wrapper
 
-Note: the backend exposes separate registration/login routes for Normal Users, Store Owners, and Admins. All routes are mounted under `/api` as follows:
+The backend uses a helper (`utils/result.js`) to ensure all responses follow a standard structure.
 
-- Normal users: `/api/users`
-- Store owners: `/api/store-owners`
-- Admins: `/api/admins`
-
-### 1. Normal User - Register
-**POST** `/api/users/register`
-
-Description: Register a new Normal user.
-
-Request Body:
+### Success Response Format
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "SecurePass@123",
-  "address": "123 Main St",
-  "phone": "0123456789"
-}
-```
-
-Response (standard):
-```json
-{ "success": true, "data": { /* insert result */ } }
-```
-
-### 2. Normal User - Login
-**POST** `/api/users/login`
-
-Description: Authenticate normal users. (Implementation currently queries `users` table.)
-
-Request Body:
-```json
-{ "email": "john@example.com", "password": "SecurePass@123" }
-```
-
-Response (on success):
-```json
-{
-  "success": true,
+  "status": "success",
   "data": {
-    "token": "jwt",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "address": "...",
-    "phone": "...",
-    "role": "Normal"
+    // Response payload containing records or execution details
   }
 }
 ```
 
-### 3. Store Owner - Register
-**POST** `/api/store-owners/register`
-
-Request Body: same fields as Normal user, with role assigned to `Store Owner`.
-
-### 4. Store Owner - Login
-**POST** `/api/store-owners/login`
-
-Response format: same as user login; role will be `Store Owner` on success.
-
-### 5. Admin - Register
-**POST** `/api/admins/register`
-
-### 6. Admin - Login
-**POST** `/api/admins/login`
-
-Notes:
-- The project currently uses JWT via `jsonwebtoken` and returns a `token` inside the response body.
-- Passwords are hashed with `bcrypt` before insertion.
-
----
-
-## Admin Endpoints (actual routes)
-
-All admin routes are mounted under `/api/admins`.
-
-### 1. Count Normal Users
-**GET** `/api/admins/users/count`
-
-Response:
-```json
-{ "success": true, "data": { "userCount": 123 } }
-```
-
-### 2. Count Stores
-**GET** `/api/admins/stores/count`
-
-Response:
-```json
-{ "success": true, "data": { "storeCount": 25 } }
-```
-
-### 3. Count Ratings
-**GET** `/api/admins/ratings/count`
-
-Response:
-```json
-{ "success": true, "data": { "ratingCount": 450 } }
-```
-
-### 4. Count Unique Users Who Rated
-**GET** `/api/admins/users/ratings/count`
-
-Response:
-```json
-{ "success": true, "data": { "userRatingCount": 120 } }
-```
-
-### 5. Get All Users (non-normal/admin filter in current code)
-**GET** `/api/admins/users/all`
-
-Response: list of users (fields: `uid`, `name`, `email`, `address`, `phone`).
-
-### 6. Get All Stores (admin view)
-**GET** `/api/admins/stores/all`
-
-Response: list of stores (fields: `store_id`, `store_name`, `store_email`, `store_address`).
-
-Notes:
-- These endpoints directly query the database and return results via the common `result.createResult` wrapper.
-- Access control is assumed to be applied at a higher layer (not present in route files).
-
----
-
-### 7. Get Store Details (Admin)
-**GET** `/api/admin/stores/{storeId}`
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
+### Error Response Format
 ```json
 {
-  "success": true,
-  "data": {
-    "storeId": "uuid",
-    "name": "Store Name",
-    "email": "store@example.com",
-    "address": "123 Store St, City",
-    "rating": 4.5,
-    "totalRatings": 45,
-    "createdAt": "2024-06-05T10:30:00Z"
-  }
+  "status": "error",
+  "error": "Error message describing the failure"
 }
 ```
 
-**Access Control:** Admin only
-
 ---
 
-### 8. Get All Users (Admin View)
-**GET** `/api/admin/users`
+## 👤 User Endpoints (`/users`)
 
-**Headers:** `Authorization: Bearer {token}`
+These routes handle credentials, authentication, and password updates for Normal users.
 
-**Query Parameters:**
-- `page`: Integer (default: 1)
-- `limit`: Integer (default: 10)
-- `sortBy`: "name" | "email" | "address" | "role" (default: "name")
-- `sortOrder`: "asc" | "desc" (default: "asc")
-- `role`: "ADMIN" | "NORMAL_USER" | "STORE_OWNER" (optional filter)
-- `search`: String (filter by name, email, address)
-- `filterName`: String (exact filter)
-- `filterEmail`: String (exact filter)
-- `filterRole`: String (exact filter)
+### 1. Normal User Registration
+- **HTTP Method:** `POST`
+- **Path:** `/users/register`
+- **Description:** Registers a new Normal user. Hashes the password using `bcrypt` (10 rounds).
+- **Request Body (JSON):**
+  ```json
+  {
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "password": "Password123!",
+    "address": "123 Main Street, Cityville",
+    "phone": "9876543210",
+    "role": "Normal" // Optional. Defaults to "Normal".
+  }
+}
+```
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "fieldCount": 0,
+      "affectedRows": 1,
+      "insertId": 12,
+      "info": "",
+      "serverStatus": 2,
+      "warningStatus": 0,
+      "changedRows": 0
+    }
+  }
+  ```
 
-**Example:** `/api/admin/users?page=1&limit=10&sortBy=name&sortOrder=asc&role=NORMAL_USER`
+### 2. Normal User Login
+- **HTTP Method:** `POST`
+- **Path:** `/users/login`
+- **Description:** Authenticates a Normal user using their email and password. Generates and returns a JWT token.
+- **Request Body (JSON):**
+  ```json
+  {
+    "email": "jane.doe@example.com",
+    "password": "Password123!"
+  }
+  ```
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "id": 12,
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "address": "123 Main Street, Cityville",
+      "phone": "9876543210",
+      "role": "Normal"
+    }
+  }
+  ```
+- **Error Response (Invalid Password):**
+  ```json
+  {
+    "status": "error",
+    "error": "Invalid Password"
+  }
+  ```
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "users": [
+### 3. Get User Store Reviews
+- **HTTP Method:** `GET`
+- **Path:** `/users/ratings`
+- **Description:** Fetches all ratings and reviews given to stores owned by a specific owner ID.
+- **Query Parameters:**
+  - `uid` (Integer, Required): The owner's user ID.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
       {
-        "userId": "uuid",
-        "name": "User Name",
-        "email": "user@example.com",
-        "address": "User Address",
-        "role": "NORMAL_USER",
-        "createdAt": "2024-06-05T10:30:00Z"
+        "rating_id": 1,
+        "rating_value": 5,
+        "store_name": "Premium Foods"
+      }
+    ]
+  }
+  ```
+
+### 4. Update Password (Normal User)
+- **HTTP Method:** `PUT`
+- **Path:** `/users/update-password`
+- **Description:** Allows a normal user to change their password by validating their old password.
+- **Request Body (JSON):**
+  ```json
+  {
+    "uid": 12,
+    "old_password": "Password123!",
+    "new_password": "NewSecurePassword456!"
+  }
+  ```
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "fieldCount": 0,
+      "affectedRows": 1,
+      "insertId": 0,
+      "info": "Rows matched: 1  Changed: 1  Warnings: 0",
+      "serverStatus": 2,
+      "warningStatus": 0,
+      "changedRows": 1
+    }
+  }
+  ```
+
+---
+
+## 🏬 Store Owner Endpoints (`/store-owners`)
+
+Routes designed specifically for Store Owners to manage accounts and view store reviews.
+
+### 1. Store Owner Registration
+- **HTTP Method:** `POST`
+- **Path:** `/store-owners/register`
+- **Description:** Registers a new user with the `'Store Owner'` role.
+- **Request Body (JSON):** Same fields as `/users/register`.
+
+### 2. Store Owner Login
+- **HTTP Method:** `POST`
+- **Path:** `/store-owners/login`
+- **Description:** Authenticates a Store Owner. Checks that the user has the role `'Store Owner'`.
+- **Request Body (JSON):** Same fields as `/users/login`.
+- **Success Response:** Same structure as `/users/login` returning user details with `"role": "Store Owner"`.
+
+### 3. Get Store Owner Store Ratings
+- **HTTP Method:** `GET`
+- **Path:** `/store-owners/ratings`
+- **Description:** Fetches all submitted store ratings, reviews, and user details for all stores owned by this owner.
+- **Query Parameters:**
+  - `uid` (Integer, Required): The owner's user ID.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "store_id": 3,
+        "store_name": "Premium Seed Store A",
+        "rating_value": 5,
+        "created_at": "2026-06-06T07:12:00.000Z",
+        "user_name": "Alice Seed User Account",
+        "user_email": "alice.seed@example.com"
+      }
+    ]
+  }
+  ```
+
+### 4. Get Store Average Rating (Store Owner View)
+- **HTTP Method:** `GET`
+- **Path:** `/store-owners/ratings/average`
+- **Description:** Retrieves the overall average rating for stores owned by this owner.
+- **Query Parameters:**
+  - `uid` (Integer, Required): The owner's user ID.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "store_id": 3,
+        "store_name": "Premium Seed Store A",
+        "avg_rating": 4.5
+      }
+    ]
+  }
+  ```
+
+### 5. Update Password (Store Owner)
+- **HTTP Method:** `PUT`
+- **Path:** `/store-owners/update-password`
+- **Description:** Updates the store owner's password after validating the old password.
+- **Request Body (JSON):** Same fields as `/users/update-password`.
+
+---
+
+## 👑 Admin Endpoints (`/admins`)
+
+Admin-only endpoints used to fetch counts, view consolidated stores/users lists, and perform admin actions.
+
+### 1. Admin Registration
+- **HTTP Method:** `POST`
+- **Path:** `/admins/register`
+- **Description:** Registers an admin user with the `'Admin'` role.
+- **Request Body (JSON):** Same fields as `/users/register`.
+
+### 2. Admin Login
+- **HTTP Method:** `POST`
+- **Path:** `/admins/login`
+- **Description:** Authenticates an admin user. Requires the user to have the role `'Admin'`.
+- **Request Body (JSON):** Same fields as `/users/login`.
+
+### 3. Count Normal Users
+- **HTTP Method:** `GET`
+- **Path:** `/admins/users/count`
+- **Description:** Returns the total count of registered users with role `'Normal'`.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "userCount": 42
+    }
+  }
+  ```
+
+### 4. Count Registered Stores
+- **HTTP Method:** `GET`
+- **Path:** `/admins/stores/count`
+- **Description:** Returns the total count of store profiles in the database.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "storeCount": 18
+    }
+  }
+  ```
+
+### 5. Count Total Ratings Submitted
+- **HTTP Method:** `GET`
+- **Path:** `/admins/ratings/count`
+- **Description:** Returns the total count of ratings across all stores.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "ratingCount": 156
+    }
+  }
+  ```
+
+### 6. Count Active Reviewers
+- **HTTP Method:** `GET`
+- **Path:** `/admins/users/ratings/count`
+- **Description:** Returns the count of unique normal users who have submitted at least one rating.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "userRatingCount": 29
+    }
+  }
+  ```
+
+### 7. Get All Users (Admin View)
+- **HTTP Method:** `GET`
+- **Path:** `/admins/users/all`
+- **Description:** Fetches all users (Normal, Store Owner, Admin) and computes the average rating of their store if they are a Store Owner.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "uid": 1,
+        "name": "System Administrator",
+        "email": "admin@example.com",
+        "address": "Admin HQ",
+        "phone": "1234567890",
+        "role": "Admin",
+        "avg_rating": null
       },
       {
-        "userId": "uuid",
-        "name": "Store Owner Name",
+        "uid": 2,
+        "name": "Store Owner Account",
         "email": "owner@example.com",
-        "address": "Owner Address",
-        "role": "STORE_OWNER",
-        "storeName": "Store Name",
-        "rating": 4.2,
-        "createdAt": "2024-06-05T10:30:00Z"
+        "address": "456 Market St",
+        "phone": "5551112222",
+        "role": "Store Owner",
+        "avg_rating": "4.50"
       }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "totalRecords": 150,
-      "totalPages": 15
+    ]
+  }
+  ```
+
+### 8. Get All Stores (Admin View)
+- **HTTP Method:** `GET`
+- **Path:** `/admins/stores/all`
+- **Description:** Fetches all store profiles with their overall average rating.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "store_id": 1,
+        "store_name": "Premium Foods",
+        "store_email": "foods@example.com",
+        "store_address": "789 Pine Ave",
+        "avg_rating": "4.67"
+      }
+    ]
+  }
+  ```
+
+---
+
+## 🏪 Store Endpoints (`/stores`)
+
+Routes handling store registration, retrieval, updating, deleting, and searching.
+
+### 1. Add Store
+- **HTTP Method:** `POST`
+- **Path:** `/stores/add`
+- **Description:** Creates a store profile. Can only be done by a user with role `'Store Owner'` who does not yet have a store.
+- **Request Body (JSON):**
+  ```json
+  {
+    "owner_id": 2,
+    "store_name": "Premium Seed Store A",
+    "store_email": "store.a@example.com",
+    "store_address": "200 Market Street, Cityville"
+  }
+  ```
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "affectedRows": 1,
+      "insertId": 5
     }
   }
-}
-```
+  ```
 
-**Access Control:** Admin only
+### 2. Get All Stores (Raw)
+- **HTTP Method:** `GET`
+- **Path:** `/stores/all`
+- **Description:** Fetches all store records (without rating aggregates).
+- **Success Response:** List of store records containing `id`, `owner_id`, `store_name`, `store_email`, `store_address`, `created_at`, `updated_at`.
 
----
-
-### 9. Get User Details (Admin)
-**GET** `/api/admin/users/{userId}`
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "userId": "uuid",
-    "name": "User Name",
-    "email": "user@example.com",
-    "address": "User Address",
-    "role": "NORMAL_USER",
-    "createdAt": "2024-06-05T10:30:00Z"
-  }
-}
-```
-
-**Or for Store Owner:**
-```json
-{
-  "success": true,
-  "data": {
-    "userId": "uuid",
-    "name": "Store Owner Name",
-    "email": "owner@example.com",
-    "address": "Owner Address",
-    "role": "STORE_OWNER",
-    "storeId": "uuid",
-    "storeName": "Store Name",
-    "rating": 4.5,
-    "createdAt": "2024-06-05T10:30:00Z"
-  }
-}
-```
-
-**Access Control:** Admin only
-
----
-
-### 10. Delete User
-**DELETE** `/api/admin/users/{userId}`
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "User deleted successfully"
-}
-```
-
-**Access Control:** Admin only
-
----
-
-### 11. Delete Store
-**DELETE** `/api/admin/stores/{storeId}`
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Store deleted successfully"
-}
-```
-
-**Access Control:** Admin only
-
----
-
-## User Endpoints (actual routes)
-
-All user routes are mounted under `/api/users`.
-
-### 1. Register
-**POST** `/api/users/register` — creates a Normal user (see Authentication section)
-
-### 2. Login
-**POST** `/api/users/login` — authenticates a Normal user (see Authentication section)
-
-### 3. Get Ratings (for stores owned by a user)
-**GET** `/api/users/ratings?uid={user_uid}`
-
-Response sample:
-```json
-[{ "rating_id": 1, "rating_value": 5, "review": "Great", "store_name": "Coffee Shop" }]
-```
-
----
-
-## Rating Endpoints (actual routes)
-
-All rating routes are mounted under `/api/ratings`.
-
-### 1. Submit a new rating
-**POST** `/api/ratings/add`
-
-Request body:
-```json
-{
-  "user_id": 5,
-  "store_id": 1,
-  "rating_value": 4,
-  "review_text": "Great service!"
-}
-```
-
-Response (on success):
-```json
-{
-  "success": true,
-  "data": { "affectedRows": 1 }
-}
-```
-
-**Note:** Will return an error if the user has already rated this store.
-
-### 2. Update/Modify a rating
-**PUT** `/api/ratings/update/:rating_id`
-
-Request body:
-```json
-{
-  "rating_value": 5,
-  "review_text": "Updated review - excellent!"
-}
-```
-
-### 3. Get ratings submitted by a specific user
-**GET** `/api/ratings/user/:user_id`
-
-Response sample:
-```json
-[
+### 3. Get All Stores with User Ratings & Search
+- **HTTP Method:** `GET`
+- **Path:** `/stores/all-with-user-ratings`
+- **Description:** Returns all stores with their average rating, total ratings count, and the specific `user_rating` and `user_rating_id` submitted by the requesting user. Supports text filtering.
+- **Query Parameters:**
+  - `user_id` (Integer, Required): Used to map whether this user has rated the store.
+  - `search` (String, Optional): Searches by store name or address.
+- **Success Response:**
+  ```json
   {
-    "rating_id": 1,
-    "rating_value": 4,
-    "review_text": "Great service!",
-    "created_at": "2024-01-15T10:30:00Z",
+    "status": "success",
+    "data": [
+      {
+        "store_id": 1,
+        "store_name": "Premium Seed Store A",
+        "store_email": "store.a@example.com",
+        "store_address": "200 Market Street",
+        "avg_rating": 4.5,
+        "rating_count": 8,
+        "user_rating": 5, // Rating given by user_id
+        "user_rating_id": 14 // ID of the rating in the ratings table
+      }
+    ]
+  }
+  ```
+
+### 4. Get Store by Owner ID
+- **HTTP Method:** `GET`
+- **Path:** `/stores/owner/:owner_id`
+- **Description:** Fetches the store profile owned by a specific owner ID.
+- **Path Parameters:**
+  - `owner_id` (Integer): The ID of the store owner.
+- **Success Response:** Returns store details as an object, or `null` if the owner doesn't have a store.
+
+### 5. Get Store by Store ID
+- **HTTP Method:** `GET`
+- **Path:** `/stores/:id`
+- **Description:** Fetches a store profile by its primary key ID.
+- **Path Parameters:**
+  - `id` (Integer): The ID of the store.
+- **Success Response:** Returns store record array in the `data` wrapper.
+
+### 6. Update Store
+- **HTTP Method:** `PUT`
+- **Path:** `/stores/update/:id`
+- **Description:** Updates store name, email, and address.
+- **Path Parameters:**
+  - `id` (Integer): Store ID.
+- **Request Body (JSON):**
+  ```json
+  {
+    "store_name": "Updated Store Name",
+    "store_email": "updated@example.com",
+    "store_address": "456 Updated St"
+  }
+  ```
+
+### 7. Delete Store
+- **HTTP Method:** `DELETE`
+- **Path:** `/stores/delete/:id`
+- **Description:** Deletes a store profile (cascades and deletes all ratings for the store).
+- **Path Parameters:**
+  - `id` (Integer): Store ID.
+
+### 8. Get Ratings Aggregate Per Store
+- **HTTP Method:** `GET`
+- **Path:** `/stores/ratings/count`
+- **Description:** Returns total rating counts and averages per store, ordered alphabetically by `store_name`.
+- **Success Response:**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "store_id": 1,
+        "store_name": "Gourmet Foods",
+        "rating_count": 5,
+        "avg_rating": 4.2
+      }
+    ]
+  }
+  ```
+
+### 9. List All Store Ratings (Raw)
+- **HTTP Method:** `GET`
+- **Path:** `/stores/ratings/list`
+- **Description:** Fetches a simple flat list linking stores to their rating values and creation timestamps.
+
+### 10. Search Stores by Name/Address
+- **HTTP Method:** `GET`
+- **Path:** `/stores/search`
+- **Description:** Filters store lists.
+- **Query Parameters:**
+  - `query` (String, Required): Text to match against `store_name` or `store_address` (via SQL `LIKE`).
+
+---
+
+## ⭐ Rating Endpoints (`/ratings`)
+
+Routes handling review submission, editing, deleting, and average calculation.
+
+### 1. Submit Rating
+- **HTTP Method:** `POST`
+- **Path:** `/ratings/add`
+- **Description:** Creates a rating for a store. Prevents duplicate submissions by check-querying existing ratings for the `user_id` and `store_id` combo.
+- **Request Body (JSON):**
+  ```json
+  {
+    "user_id": 12,
     "store_id": 1,
-    "store_name": "Coffee Shop",
-    "store_address": "123 Main St"
+    "rating_value": 5
   }
-]
-```
-
-### 4. Get ratings for a specific store
-**GET** `/api/ratings/store/:store_id`
-
-Response sample:
-```json
-[
+  ```
+- **Error Response (User already rated store):**
+  ```json
   {
-    "rating_id": 1,
-    "rating_value": 4,
-    "review_text": "Great service!",
-    "created_at": "2024-01-15T10:30:00Z",
-    "uid": 5,
-    "name": "John Doe",
-    "email": "john@example.com"
+    "status": "error",
+    "error": "User has already rated this store"
   }
-]
-```
+  ```
 
-### 5. Get average rating for a store
-**GET** `/api/ratings/store/:store_id/average`
-
-Response sample:
-```json
-[
+### 2. Update Rating
+- **HTTP Method:** `PUT`
+- **Path:** `/ratings/update/:rating_id`
+- **Description:** Updates the rating value for an existing rating ID.
+- **Path Parameters:**
+  - `rating_id` (Integer): ID of the rating record.
+- **Request Body (JSON):**
+  ```json
   {
-    "store_id": 1,
-    "store_name": "Coffee Shop",
-    "average_rating": 4.5,
-    "total_ratings": 20
+    "rating_value": 4
   }
-]
-```
-
-### 6. Get all ratings with optional filters
-**GET** `/api/ratings/list`
-
-Query parameters (all optional):
-- `store_id`: Filter by store ID
-- `user_id`: Filter by user ID
-- `min_rating`: Filter ratings >= min_rating (1-5)
-- `max_rating`: Filter ratings <= max_rating (1-5)
-
-**Examples:**
-- `/api/ratings/list` — Get all ratings
-- `/api/ratings/list?store_id=1` — Get all ratings for store 1
-- `/api/ratings/list?user_id=5` — Get all ratings by user 5
-- `/api/ratings/list?min_rating=4&max_rating=5` — Get ratings between 4 and 5
-
-Response sample:
-```json
-[
-  {
-    "rating_id": 1,
-    "rating_value": 4,
-    "review_text": "Great service!",
-    "created_at": "2024-01-15T10:30:00Z",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "store_name": "Coffee Shop",
-    "store_address": "123 Main St"
-  }
-]
-```
-
-### 7. Delete a rating
-**DELETE** `/api/ratings/delete/:rating_id`
-
-Response (on success):
-```json
-{
-  "success": true,
-  "data": { "affectedRows": 1 }
-}
-```
-
----
-
-
-All store routes are mounted under `/api/stores`.
-
-### 1. Add a new store
-**POST** `/api/stores/add`
-
-Request body (fields used in code): `owner_id`, `store_name`, `store_email`, `store_address`.
-
-### 2. Get all stores
-**GET** `/api/stores/all`
-
-### 3. Get store by ID
-**GET** `/api/stores/:id`
-
-### 4. Update store
-**PUT** `/api/stores/update/:id`
-
-### 5. Delete store
-**DELETE** `/api/stores/delete/:id`
-
-### 6. Get rating counts and averages per store
-**GET** `/api/stores/ratings/count`
-
-Response sample:
-```json
-[{ "store_id": 1, "store_name": "Coffee Shop", "rating_count": 45, "avg_rating": 4.50 }]
-```
-
-### 7. List store ratings
-**GET** `/api/stores/ratings/list`
-
-Returns rows of `store_id`, `store_name`, `rating_value`, `review_text`, `created_at`.
-
-### 8. Search stores by name or address
-**GET** `/api/stores/search?query={searchTerm}`
-
-Response: list of matching stores.
-
----
-
-## Store Owner Endpoints
-
-All store-owner routes are mounted under `/api/store-owners`.
-
-### 1. Register
-**POST** `/api/store-owners/register`
-
-### 2. Login
-**POST** `/api/store-owners/login`
-
-### 3. Get Ratings for Owner's Stores
-**GET** `/api/store-owners/ratings?uid={owner_uid}`
-
-Returns `store_id`, `store_name`, `rating_value`, `review_text`, `created_at` for stores owned by the given owner.
-
-### 4. Get Average Rating for Owner's Stores
-**GET** `/api/store-owners/ratings/average?uid={owner_uid}`
-
-Response sample:
-```json
-[{ "store_id": 1, "store_name": "Coffee Shop", "avg_rating": 4.5 }]
-```
-
-### 5. Update Store Owner Password
-**PUT** `/api/store-owners/update-password`
-
-Request Body:
-```json
-{ "uid": 1, "old_password": "OldPass", "new_password": "NewPass@123" }
-```
-
----
-
-## Common Response Formats
-
-### Success Response
-```json
-{
-  "success": true,
-  "message": "Operation completed successfully",
-  "data": {}
-}
-```
-
-### Error Response
-```json
-{
-  "success": false,
-  "message": "Error message describing what went wrong",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Email already exists"
-    }
-  ]
-}
-```
-
----
-
-## Error Handling
-
-### Validation Errors (400)
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "name",
-      "message": "Name must be between 20 and 60 characters"
-    },
-    {
-      "field": "password",
-      "message": "Password must contain at least one uppercase letter and one special character"
-    }
-  ]
-}
-```
-
-### Authentication Errors (401)
-```json
-{
-  "success": false,
-  "message": "Unauthorized: Invalid or expired token"
-}
-```
-
-### Authorization Errors (403)
-```json
-{
-  "success": false,
-  "message": "Forbidden: You do not have permission to access this resource"
-}
-```
-
-### Not Found (404)
-```json
-{
-  "success": false,
-  "message": "Resource not found"
-}
-```
-
-### Conflict Errors (409)
-```json
-{
-  "success": false,
-  "message": "Email already exists in the system"
-}
-```
-
-### Server Errors (500)
-```json
-{
-  "success": false,
-  "message": "Internal server error. Please try again later."
-}
-```
-
----
-
-## Status Codes
-
-| Code | Meaning |
-|------|---------|
-| 200 | OK - Request successful |
-| 201 | Created - Resource created successfully |
-| 400 | Bad Request - Invalid input/validation failed |
-| 401 | Unauthorized - Missing or invalid authentication |
-| 403 | Forbidden - Authenticated but no permission |
-| 404 | Not Found - Resource doesn't exist |
-| 409 | Conflict - Resource already exists (duplicate) |
-| 500 | Internal Server Error - Server-side error |
-
----
-
-## Authentication Flow
-
-### JWT Token
-- All protected endpoints require `Authorization: Bearer {token}` header
-- Token should be included in every request to protected routes
-- Token expires after 24 hours (configurable)
-- The current backend does not implement a dedicated refresh-token endpoint
-
-### Role-Based Access Control (RBAC)
-- **ADMIN**: Full access to admin endpoints
-- **NORMAL_USER**: Access to user endpoints and store browsing
-- **STORE_OWNER**: Access to store owner endpoints and user endpoints
-
----
-
-## Pagination
-
-All list endpoints support pagination:
-
-**Query Parameters:**
-- `page`: Page number (1-indexed, default: 1)
-- `limit`: Records per page (default: 10, max: 100)
-
-**Response:**
-```json
-{
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "totalRecords": 150,
-    "totalPages": 15
-  }
-}
-```
-
----
-
-## Sorting
-
-List endpoints support sorting:
-
-**Query Parameters:**
-- `sortBy`: Field to sort by (varies by endpoint)
-- `sortOrder`: "asc" (ascending) or "desc" (descending), default: "asc"
-
-**Example:** `/api/admin/users?sortBy=name&sortOrder=desc`
-
----
-
-## Search and Filtering
-
-List endpoints support search and filtering:
-
-**Search:**
-- `search`: General search across multiple fields
-- `searchName`, `searchEmail`, etc.: Field-specific search
-
-**Filter:**
-- `filterName`, `filterEmail`, `filterRole`: Exact filters
-- Filters work with sorting and pagination
-
-**Example:** `/api/admin/stores?search=coffee&sortBy=name&page=2&limit=20`
-
----
-
-## Implementation Notes
-
-1. **Database Indexing**: Index frequently queried fields (email, name, storeId, userId)
-2. **Rate Limiting**: Implement rate limiting to prevent abuse (e.g., 100 requests/hour per IP)
-3. **CORS**: Configure CORS appropriately for frontend domain
-4. **Input Sanitization**: Sanitize all user inputs to prevent SQL injection
-5. **Password Hashing**: Use bcrypt or similar for password hashing
-6. **Logging**: Log all sensitive operations for audit trail
-7. **API Versioning**: Consider versioning API for future changes (e.g., /api/v1/)
-8. **Caching**: Cache frequently accessed data (stores, ratings aggregates)
-9. **Transaction Safety**: Use database transactions for operations affecting multiple tables
-10. **Soft Deletes**: Consider soft deletes for critical data like users and stores
-
+  ```
+
+### 3. Get Ratings by User ID
+- **HTTP Method:** `GET`
+- **Path:** `/ratings/user/:user_id`
+- **Description:** Fetches all ratings submitted by a specific user.
+- **Path Parameters:**
+  - `user_id` (Integer): User's primary key ID.
+- **Success Response:** Includes `rating_id`, `rating_value`, `created_at`, `store_id`, `store_name`, `store_address`.
+
+### 4. Get Ratings by Store ID
+- **HTTP Method:** `GET`
+- **Path:** `/ratings/store/:store_id`
+- **Description:** Retrieves all user reviews and ratings submitted for a specific store.
+- **Path Parameters:**
+  - `store_id` (Integer): Store ID.
+
+### 5. Get Store Average Rating
+- **HTTP Method:** `GET`
+- **Path:** `/ratings/store/:store_id/average`
+- **Description:** Calculates the overall average score and total ratings count for a store.
+- **Path Parameters:**
+  - `store_id` (Integer): Store ID.
+
+### 6. List Ratings with Filters
+- **HTTP Method:** `GET`
+- **Path:** `/ratings/list`
+- **Description:** Consolidated ratings list. Allows filtering by store, user, and rating ranges.
+- **Query Parameters (All Optional):**
+  - `store_id` (Integer)
+  - `user_id` (Integer)
+  - `min_rating` (Integer, 1-5)
+  - `max_rating` (Integer, 1-5)
+
+### 7. Delete Rating
+- **HTTP Method:** `DELETE`
+- **Path:** `/ratings/delete/:rating_id`
+- **Description:** Deletes a rating from the database.
+- **Path Parameters:**
+  - `rating_id` (Integer): Rating record ID.
