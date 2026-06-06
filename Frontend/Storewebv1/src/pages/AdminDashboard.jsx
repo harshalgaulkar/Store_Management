@@ -223,7 +223,8 @@ const AdminDashboard = () => {
         fetchCounts();
         fetchUsers();
       } else {
-        setUserFormError(response.data.error || 'Failed to create user.');
+        const errVal = response.data.error;
+        setUserFormError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Failed to create user.'));
       }
     } catch (err) {
       console.error(err);
@@ -268,7 +269,8 @@ const AdminDashboard = () => {
         fetchStores();
         fetchUsers(); // Refresh rating averages in users list
       } else {
-        setStoreFormError(response.data.error || 'Failed to register store.');
+        const errVal = response.data.error;
+        setStoreFormError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Failed to register store.'));
       }
     } catch (err) {
       console.error(err);

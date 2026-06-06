@@ -64,10 +64,12 @@ const Login = () => {
         else if (userData.role === 'Store Owner') navigate('/owner');
         else navigate('/user');
       } else {
-        setError(response.data.error || 'Invalid credentials');
+        const errVal = response.data.error;
+        setError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Invalid credentials'));
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Connection failed. Please check if backend is running.');
+      const errVal = err.response?.data?.error;
+      setError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Connection failed. Please check if backend is running.'));
     } finally {
       setIsSubmitting(false);
     }

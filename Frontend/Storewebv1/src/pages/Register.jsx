@@ -86,10 +86,12 @@ const Register = () => {
       if (response.data.status === 'success' || response.data.success) {
         navigate('/login', { state: { message: 'Registration successful! Please sign in.' } });
       } else {
-        setError(response.data.error || 'Registration failed.');
+        const errVal = response.data.error;
+        setError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Registration failed.'));
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Server connection error.');
+      const errVal = err.response?.data?.error;
+      setError(typeof errVal === 'object' ? (errVal.code === 'ECONNREFUSED' ? 'Database connection refused. Please check server settings.' : JSON.stringify(errVal)) : (errVal || 'Registration failed. Server connection error.'));
     } finally {
       setIsSubmitting(false);
     }
