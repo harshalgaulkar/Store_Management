@@ -40,6 +40,7 @@ router.post('/login', (req, res) => {
                     const token = jwt.sign(payload, config.SECRET)
                     const user = {
                         token,
+                        id: data[0].id,
                         name: data[0].name,
                         email: data[0].email,
                         address: data[0].address,
@@ -57,9 +58,11 @@ router.post('/login', (req, res) => {
 // Store owner should see their store ratings and reviews
 router.get('/ratings', (req, res) => {
     const { uid } = req.query
-    const sql = `SELECT s.id AS store_id, s.store_name, r.rating_value, r.created_at
+    const sql = `SELECT s.id AS store_id, s.store_name, r.rating_value, r.created_at,
+                u.name AS user_name, u.email AS user_email
                 FROM stores s
                 JOIN ratings r ON s.id = r.store_id
+                JOIN users u ON r.user_id = u.id
                 WHERE s.owner_id = ?`
     pool.query(sql, [uid], (err, data) => {
         res.send(result.createResult(err, data))

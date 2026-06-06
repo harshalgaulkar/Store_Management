@@ -7,4 +7,4 @@ const pool = mysql2.createPool({
     database: 'store'
 })
 
-module.exports = pool.promise()
+module.exports = pool

@@ -23,6 +23,39 @@ router.get('/all', (req, res) => {
     })
 })
 
+// Get all stores with overall average rating and current user's submitted rating
+router.get('/all-with-user-ratings', (req, res) => {
+    const { user_id, search } = req.query
+    let sql = `SELECT s.id AS store_id, s.store_name, s.store_email, s.store_address,
+               ROUND(AVG(r.rating_value), 2) AS avg_rating,
+               COUNT(r.id) AS rating_count,
+               MAX(CASE WHEN r.user_id = ? THEN r.rating_value END) AS user_rating,
+               MAX(CASE WHEN r.user_id = ? THEN r.id END) AS user_rating_id
+               FROM stores s
+               LEFT JOIN ratings r ON s.id = r.store_id`
+    let params = [user_id, user_id]
+    
+    if (search) {
+        sql += ' WHERE s.store_name LIKE ? OR s.store_address LIKE ?'
+        params.push(`%${search}%`, `%${search}%`)
+    }
+    
+    sql += ' GROUP BY s.id'
+    
+    pool.query(sql, params, (err, data) => {
+        res.send(result.createResult(err, data))
+    })
+})
+
+// Get store by owner ID
+router.get('/owner/:owner_id', (req, res) => {
+    const { owner_id } = req.params
+    const sql = 'SELECT * FROM stores WHERE owner_id = ?'
+    pool.query(sql, [owner_id], (err, data) => {
+        res.send(result.createResult(err, data && data.length > 0 ? data[0] : null))
+    })
+})
+
 // Get store by ID
 router.get('/:id', (req, res) => {
     const { id } = req.params
@@ -84,6 +117,8 @@ router.get('/search', (req, res) => {
         res.send(result.createResult(err, data))
     })
 })
+
+
 
 
 module.exports = router

@@ -84,5 +84,34 @@ router.get('/ratings', (req, res) => {
     })
 })
 
+// Update Normal user's password
+router.put('/update-password', (req, res) => {
+    const { uid, old_password, new_password } = req.body
+    const sql = 'SELECT * FROM users WHERE id = ? AND role = "Normal"'
+    pool.query(sql, [uid], (err, data) => {
+        if (err)
+            res.send(result.createResult(err))
+        else if (data.length == 0)
+            res.send(result.createResult("User not found"))
+        else {
+            bcrypt.compare(old_password, data[0].password, (err, passwordStatus) => {
+                if (passwordStatus) {
+                    bcrypt.hash(new_password, config.SALT_ROUND, (err, hashedPassword) => {
+                        if (hashedPassword) {
+                            const updateSql = 'UPDATE users SET password = ? WHERE id = ?'
+                            pool.query(updateSql, [hashedPassword, uid], (err, updateData) => {
+                                    res.send(result.createResult(err, updateData))
+                            })
+                        } else
+                            res.send(result.createResult(err))
+                    })
+                }
+                else
+                    res.send(result.createResult('Invalid Old Password'))
+            })
+        }
+    })
+})
+
 
 module.exports = router

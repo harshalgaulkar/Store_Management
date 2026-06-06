@@ -40,6 +40,7 @@ router.post('/login', (req, res) => {
                     const token = jwt.sign(payload, config.SECRET)
                     const user = {
                         token,
+                        id: data[0].id,
                         name: data[0].name,
                         email: data[0].email,
                         address: data[0].address,
@@ -88,17 +89,26 @@ router.get('/users/ratings/count', (req, res) => {
     })
 })
 
-// Get All Users normal and admins
+// Get All Users (Normal, Admin, Store Owner) with average rating if Store Owner
 router.get('/users/all', (req, res) => {
-    const sql = `SELECT id AS uid, name, email, address, phone FROM users WHERE role != 'Normal' AND role != 'Admin'`
+    const sql = `SELECT u.id AS uid, u.name, u.email, u.address, u.phone, u.role,
+                 ROUND(AVG(r.rating_value), 2) AS avg_rating
+                 FROM users u
+                 LEFT JOIN stores s ON u.id = s.owner_id
+                 LEFT JOIN ratings r ON s.id = r.store_id
+                 GROUP BY u.id`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })
 })
 
-// Get All Stores
+// Get All Stores with average rating
 router.get('/stores/all', (req, res) => {
-    const sql = `SELECT id AS store_id, store_name, store_email, store_address FROM stores`
+    const sql = `SELECT s.id AS store_id, s.store_name, s.store_email, s.store_address,
+                 ROUND(AVG(r.rating_value), 2) AS avg_rating
+                 FROM stores s
+                 LEFT JOIN ratings r ON s.id = r.store_id
+                 GROUP BY s.id`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })
