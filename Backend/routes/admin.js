@@ -35,7 +35,7 @@ router.post('/login', (req, res) => {
             bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
                 if (passwordStatus) {
                     const payload = {
-                        uid: data[0].uid,
+                        uid: data[0].id,
                     }
                     const token = jwt.sign(payload, config.SECRET)
                     const user = {
@@ -58,9 +58,9 @@ router.post('/login', (req, res) => {
 
 // Count of users
 router.get('/users/count', (req, res) => {
-    const sql = `SELECT COUNT(*) AS userCount FROM users WHERE role = "Normal"`
+    const sql = `SELECT COUNT(*) AS userCount FROM users WHERE role = 'Normal'`
     pool.query(sql, (err, data) => {
-        res.send(result.createResult(err, data[0]))
+        res.send(result.createResult(err, data ? data[0] : null))
     })
 })
 
@@ -68,7 +68,7 @@ router.get('/users/count', (req, res) => {
 router.get('/stores/count', (req, res) => {
     const sql = `SELECT COUNT(*) AS storeCount FROM stores`
     pool.query(sql, (err, data) => {
-        res.send(result.createResult(err, data[0]))
+        res.send(result.createResult(err, data ? data[0] : null))
     })
 })
 
@@ -76,7 +76,7 @@ router.get('/stores/count', (req, res) => {
 router.get('/ratings/count', (req, res) => {
     const sql = `SELECT COUNT(*) AS ratingCount FROM ratings`
     pool.query(sql, (err, data) => {
-        res.send(result.createResult(err, data[0]))
+        res.send(result.createResult(err, data ? data[0] : null))
     })
 })
 
@@ -84,13 +84,13 @@ router.get('/ratings/count', (req, res) => {
 router.get('/users/ratings/count', (req, res) => {
     const sql = `SELECT COUNT(DISTINCT user_id) AS userRatingCount FROM ratings`
     pool.query(sql, (err, data) => {
-        res.send(result.createResult(err, data[0]))
+        res.send(result.createResult(err, data ? data[0] : null))
     })
 })
 
 // Get All Users normal and admins
 router.get('/users/all', (req, res) => {
-    const sql = `SELECT uid, name, email, address, phone FROM users WHERE role != 'Normal'AND role != 'Admin'`
+    const sql = `SELECT id AS uid, name, email, address, phone FROM users WHERE role != 'Normal' AND role != 'Admin'`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })
@@ -98,7 +98,7 @@ router.get('/users/all', (req, res) => {
 
 // Get All Stores
 router.get('/stores/all', (req, res) => {
-    const sql = `SELECT store_id, store_name, store_email, store_address FROM stores`
+    const sql = `SELECT id AS store_id, store_name, store_email, store_address FROM stores`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })

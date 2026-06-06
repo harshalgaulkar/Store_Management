@@ -40,7 +40,7 @@ router.post('/register', (req, res) => {
 
 router.post('/login', (req, res) => {
     const { email, password } = req.body
-    const sql = `SELECT * FROM users WHERE email = ?`
+    const sql = `SELECT id, name, email, password, address, phone, role FROM users WHERE email = ?`
     pool.query(sql, [email], (err, data) => {
         if (err)
             res.send(result.createResult(err))
@@ -50,7 +50,7 @@ router.post('/login', (req, res) => {
             bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
                 if (passwordStatus) {
                     const payload = {
-                        id: data[0].id,
+                        uid: data[0].id,
                     }
                     const token = jwt.sign(payload, config.SECRET)
                     const user = {
@@ -74,7 +74,7 @@ router.post('/login', (req, res) => {
 // See all ratings
 router.get('/ratings', (req, res) => {
     const { uid } = req.query
-    const sql = `SELECT r.id AS rating_id, r.rating_value, r.review, s.store_name
+    const sql = `SELECT r.id AS rating_id, r.rating_value, s.store_name
         FROM ratings r
         JOIN stores s ON r.store_id = s.id
         JOIN users u ON s.owner_id = u.id

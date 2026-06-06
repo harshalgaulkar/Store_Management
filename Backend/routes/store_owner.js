@@ -35,7 +35,7 @@ router.post('/login', (req, res) => {
             bcrypt.compare(password, data[0].password, (err, passwordStatus) => {
                 if (passwordStatus) {
                     const payload = {
-                        uid: data[0].uid,
+                        uid: data[0].id,
                     }
                     const token = jwt.sign(payload, config.SECRET)
                     const user = {
@@ -43,7 +43,6 @@ router.post('/login', (req, res) => {
                         name: data[0].name,
                         email: data[0].email,
                         address: data[0].address,
-                        phone: data[0].phone,
                         role: data[0].role
                     }
                     res.send(result.createResult(null, user))
@@ -58,9 +57,9 @@ router.post('/login', (req, res) => {
 // Store owner should see their store ratings and reviews
 router.get('/ratings', (req, res) => {
     const { uid } = req.query
-    const sql = `SELECT s.store_id, s.store_name, r.rating_value, r.review_text, r.created_at
+    const sql = `SELECT s.id AS store_id, s.store_name, r.rating_value, r.created_at
                 FROM stores s
-                JOIN ratings r ON s.store_id = r.store_id
+                JOIN ratings r ON s.id = r.store_id
                 WHERE s.owner_id = ?`
     pool.query(sql, [uid], (err, data) => {
         res.send(result.createResult(err, data))
@@ -70,11 +69,11 @@ router.get('/ratings', (req, res) => {
 // Store owner should see average rating of their store
 router.get('/ratings/average', (req, res) => {
     const { uid } = req.query
-    const sql = `SELECT s.store_id, s.store_name, ROUND(AVG(r.rating_value), 2) AS avg_rating
+    const sql = `SELECT s.id AS store_id, s.store_name, ROUND(AVG(r.rating_value), 2) AS avg_rating
                 FROM stores s
-                JOIN ratings r ON s.store_id = r.store_id
+                JOIN ratings r ON s.id = r.store_id
                 WHERE s.owner_id = ?
-                GROUP BY s.store_id, s.store_name`
+                GROUP BY s.id, s.store_name`
     pool.query(sql, [uid], (err, data) => {
         res.send(result.createResult(err, data))
     })

@@ -41,24 +41,30 @@ async function addItem(path, payload, label) {
   console.log(`\n[${label}] ${path}`)
   console.log(JSON.stringify(result.body, null, 2))
   if (!result.body || result.body.status !== 'success') {
-    throw new Error(`Failed to create ${label}: ${JSON.stringify(result.body)}`)
+    // If your result utility uses status: 'success', keep this. 
+    // Otherwise, check for existence of data.
+    if (result.body && result.body.error) throw new Error(`Failed to create ${label}: ${result.body.error}`)
   }
-  return result.body.data.insertId || result.body.data.insertId || result.body.data?.affectedRows
+  // NOTE: If using UUIDs, your backend routes MUST be updated to return the new ID 
+  // because 'insertId' only works for auto-increment integers.
+  return result.body.data.insertId || result.body.data.id
 }
 
 async function main() {
-  const timestamp = Date.now()
-
+  // Added padding to names to satisfy the 20-character CHECK constraint in schema
+  const timestamp = Date.now().toString().slice(-5)
   console.log('Starting dummy data seed to http://localhost:4000')
 
   const users = [
-    { name: `Alice Seed ${timestamp}`, email: `alice.seed.${timestamp}@example.com`, password: 'Password123!', address: '123 Oak Street', phone: '555-1010', role: 'Normal' },
-    { name: `Bob Seed ${timestamp}`, email: `bob.seed.${timestamp}@example.com`, password: 'Password123!', address: '456 Pine Avenue', phone: '555-2020', role: 'Normal' }
+    { name: `Alice Seed User Account ${timestamp}`, email: `alice.seed.${timestamp}@example.com`, password: 'Password123!', address: '123 Oak Street', phone: '1234567890', role: 'Normal' },
+    { name: `Bob Seed User Account ${timestamp}`, email: `bob.seed.${timestamp}@example.com`, password: 'Password123!', address: '456 Pine Avenue', phone: '0987654321', role: 'Normal' },
+    { name: `Charlie Seed User Account ${timestamp}`, email: `charlie.seed.${timestamp}@example.com`, password: 'Password123!', address: '789 Walnut Way', phone: '1122334455', role: 'Normal' }
   ]
 
   const storeOwners = [
-    { name: `Owner One ${timestamp}`, email: `owner.one.${timestamp}@example.com`, password: 'OwnerPass123!', address: '789 Maple Road', phone: '555-3030' },
-    { name: `Owner Two ${timestamp}`, email: `owner.two.${timestamp}@example.com`, password: 'OwnerPass123!', address: '101 Elm Lane', phone: '555-4040' }
+    { name: `Store Owner Primary Account ${timestamp}`, email: `owner.one.${timestamp}@example.com`, password: 'OwnerPass123!', address: '789 Maple Road', phone: '5551112222', role: 'Store Owner' },
+    { name: `Store Owner Secondary Account ${timestamp}`, email: `owner.two.${timestamp}@example.com`, password: 'OwnerPass123!', address: '101 Elm Lane', phone: '5553334444', role: 'Store Owner' },
+    { name: `Store Owner Tertiary Account ${timestamp}`, email: `owner.three.${timestamp}@example.com`, password: 'OwnerPass123!', address: '202 Birch Blvd', phone: '5556667777', role: 'Store Owner' }
   ]
 
   const createdUsers = []
@@ -74,8 +80,10 @@ async function main() {
   }
 
   const storeData = [
-    { owner_id: createdOwners[0].id, store_name: `Seed Store A ${timestamp}`, store_email: `store.a.${timestamp}@example.com`, store_address: '200 Market Street' },
-    { owner_id: createdOwners[1].id, store_name: `Seed Store B ${timestamp}`, store_email: `store.b.${timestamp}@example.com`, store_address: '300 Commerce Blvd' }
+    // Aligning keys with the /stores/add route in store.js
+    { owner_id: createdOwners[0].id, store_name: `Premium Seed Store A ${timestamp}`, store_email: `store.a.${timestamp}@example.com`, store_address: '200 Market Street' },
+    { owner_id: createdOwners[1].id, store_name: `Quality Seed Store B ${timestamp}`, store_email: `store.b.${timestamp}@example.com`, store_address: '300 Commerce Blvd' },
+    { owner_id: createdOwners[2].id, store_name: `Gourmet Foods Store C ${timestamp}`, store_email: `store.c.${timestamp}@example.com`, store_address: '500 Culinary Court' }
   ]
 
   const createdStores = []
@@ -85,9 +93,13 @@ async function main() {
   }
 
   const reviews = [
-    { user_id: createdUsers[0].id, store_id: createdStores[0].id, rating_value: 5, review_text: 'Excellent service and friendly staff.' },
-    { user_id: createdUsers[1].id, store_id: createdStores[0].id, rating_value: 4, review_text: 'Great products, just a little crowded.' },
-    { user_id: createdUsers[0].id, store_id: createdStores[1].id, rating_value: 3, review_text: 'Good selection but delivery was slow.' }
+    // Removed review_text as it is not in the schema
+    { user_id: createdUsers[0].id, store_id: createdStores[0].id, rating_value: 5 },
+    { user_id: createdUsers[1].id, store_id: createdStores[0].id, rating_value: 4 },
+    { user_id: createdUsers[0].id, store_id: createdStores[1].id, rating_value: 3 },
+    { user_id: createdUsers[2].id, store_id: createdStores[0].id, rating_value: 5 },
+    { user_id: createdUsers[2].id, store_id: createdStores[2].id, rating_value: 4 },
+    { user_id: createdUsers[1].id, store_id: createdStores[2].id, rating_value: 2 }
   ]
 
   for (const review of reviews) {

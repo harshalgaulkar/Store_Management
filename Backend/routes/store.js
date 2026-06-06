@@ -26,7 +26,7 @@ router.get('/all', (req, res) => {
 // Get store by ID
 router.get('/:id', (req, res) => {
     const { id } = req.params
-    const sql = 'SELECT * FROM stores WHERE store_id = ?'
+    const sql = 'SELECT * FROM stores WHERE id = ?'
     pool.query(sql, [id], (err, data) => {
         res.send(result.createResult(err, data))
     })
@@ -36,7 +36,7 @@ router.get('/:id', (req, res) => {
 router.put('/update/:id', (req, res) => {
     const { id } = req.params
     const { store_name, store_email, store_address } = req.body
-    const sql = 'UPDATE stores SET store_name = ?, store_email = ?, store_address = ? WHERE store_id = ?'
+    const sql = 'UPDATE stores SET store_name = ?, store_email = ?, store_address = ? WHERE id = ?'
     pool.query(sql, [store_name, store_email, store_address, id], (err, data) => {
         res.send(result.createResult(err, data))
     })
@@ -45,7 +45,7 @@ router.put('/update/:id', (req, res) => {
 // Delete a store
 router.delete('/delete/:id', (req, res) => {
     const { id } = req.params
-    const sql = 'DELETE FROM stores WHERE store_id = ?'
+    const sql = 'DELETE FROM stores WHERE id = ?'
     pool.query(sql, [id], (err, data) => {
         res.send(result.createResult(err, data))
     })
@@ -53,7 +53,7 @@ router.delete('/delete/:id', (req, res) => {
 
 // Get count of store ratings
 router.get('/ratings/count', (req, res) => {
-    const sql = `SELECT r.store_id,s.store_name,COUNT(*) AS rating_count,
+    const sql = `SELECT r.store_id, s.store_name, COUNT(*) AS rating_count,
         ROUND(AVG(r.rating_value), 2) AS avg_rating
         FROM ratings r
         JOIN stores s ON r.store_id = s.id
@@ -66,9 +66,9 @@ router.get('/ratings/count', (req, res) => {
 
 //List of store ratings
 router.get('/ratings/list', (req, res) => {
-    const sql = `SELECT s.store_id, s.store_name, r.rating_value, r.review_text, r.created_at
+    const sql = `SELECT s.id AS store_id, s.store_name, r.rating_value, r.created_at
                 FROM stores s
-                JOIN ratings r ON s.store_id = r.store_id`
+                JOIN ratings r ON s.id = r.store_id`
     pool.query(sql, (err, data) => {
         res.send(result.createResult(err, data))
     })
